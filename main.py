@@ -15,14 +15,15 @@ from sklearn.pipeline import Pipeline
 # Removing words that aren't relevant for classification, therefore
 # introducing classification noise.
 # These words may need to be adapted.
-STOP_WORDS=('carte', 'cb', 'du', 'facture', 'paiement')
+STOP_WORDS=('sq', 'aus','nsw', 'tap', 'pay', 'and', 'tap and pay')
+
 
 def read_lines(filename):
     lines = []
     with open(filename) as fd:
         l = fd.readline()
         while l != "":
-            if re.match("^\d{4}/\d{2}/\d{2};", l):
+            if re.match("^\d{4}/\d{2}/\d{2},", l):
                 # Only consider line starting with a valid date
                 # This allows skipping header, and possible comments
                 lines.append(l.strip())
@@ -33,20 +34,20 @@ def cleaned_training_transaction(tr):
     # Keep all transaction fields except date and price, respectively
     # at 1st and last position (not using these fields for
     # categorization).
-    return ';'.join(tr.split(';')[1:-1])
+    return ','.join(tr.split(',')[1:-1])
 
 class Corpus:
     def __enrich_training_set(self, transaction, category):
         # Keeping all information to dump into training file
-        self.__training_set_str.append("{};{}".format(transaction,category))
+        self.__training_set_str.append("{},{}".format(transaction,category))
         # Setting x and y training set vectors
         self.__training_set_x.append(cleaned_training_transaction(transaction))
         self.__training_set_y.append(category)
 
     def __init_training_set(self, training_fname):
         training_set = read_lines(training_fname)
-        transactions = [";".join(l.split(';')[:-1]) for l in training_set]
-        categories   = [         l.split(';')[-1]   for l in training_set]
+        transactions = [",".join(l.split(',')[:-1]) for l in training_set]
+        categories   = [         l.split(',')[-1]   for l in training_set]
 
         self.__training_set_str = []
         self.__training_set_x = []
@@ -63,7 +64,7 @@ class Corpus:
         self.__overview = []
         for cat,transacs in self.__categories.items():
             count  = len(transacs)
-            amount = sum([float(v.split(';')[-1].replace(' ','')) for v in transacs])
+            amount = sum([float(v.split(',')[-1].replace(' ','')) for v in transacs])
             self.__overview.append((amount, count, cat))
             self.__overview.sort()
 
@@ -97,7 +98,7 @@ class Corpus:
     def c_save_prediction(self, filename):
         with open(filename, "w") as fd:
             for x,y in zip(self.__corpus, self.__prediction):
-                fd.write("{};{}\n".format(x,y))
+                fd.write("{},{}\n".format(x,y))
 
     def c_save_training(self, filename):
         with open(filename, "w") as fd:
@@ -140,8 +141,8 @@ q                    Quit"""
     print(msg)
 
 if len(sys.argv) < 3:
-    print("Syntax is: {} <training_set> <corpus_1> [<corpus_2> ...]".format(sys.argv[0]))
-    exit(1)
+   print("Syntax is: {} <training_set> <corpus_1> [<corpus_2> ...]".format(sys.argv[0]))
+   exit(1)
 
 training_fname = sys.argv[1]
 corpus_fnames  = sys.argv[2:]
